@@ -4,8 +4,8 @@ import gzip
 import numpy as np
 
 import torch
-from torch import nn, Tensor
-from torch.nn import functional as F
+# from torch import nn, Tensor
+# from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 
 from adam_atan2_pytorch import AdoptAtan2
@@ -16,25 +16,37 @@ from titans_pytorch import (
     MemoryAttention
 )
 
+# device setup - auto-detect best available device
+
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+    print('Using CUDA')
+elif torch.backends.mps.is_available():
+    device = torch.device('mps')
+    print('Using MPS (Metal)')
+else:
+    device = torch.device('cpu')
+    print('Using CPU (will be slow)')
+
 # constants
 
-NUM_BATCHES = int(1e5)
-BATCH_SIZE = 4
+NUM_BATCHES = 1000
+BATCH_SIZE = 2
 GRADIENT_ACCUMULATE_EVERY = 4
 LEARNING_RATE = 2e-4
 VALIDATE_EVERY  = 100
-GENERATE_EVERY  = 500
+GENERATE_EVERY  = 250
 PRIME_LENGTH = 100
 GENERATE_LENGTH = 512
 SHOULD_GENERATE = True
-SEQ_LEN = 512
+SEQ_LEN = 256
 
 # neural memory related
 
 NEURAL_MEMORY_DEPTH = 2
 NUM_PERSIST_MEM = 4
-NUM_LONGTERM_MEM = 4
-NEURAL_MEM_LAYERS = (2, 4, 6)                   # layers 2, 4, 6 have neural memory, can add more
+NUM_LONGTERM_MEM = 2
+NEURAL_MEM_LAYERS = (2,)                   # layers 2, 4, 6 have neural memory, can add more
 NEURAL_MEM_GATE_ATTN_OUTPUT = False
 NEURAL_MEM_MOMENTUM = True
 NEURAL_MEM_MOMENTUM_ORDER = 1
@@ -55,12 +67,12 @@ NEURAL_MEM_SPEC_NORM_SURPRISES = True           # applying lessons from Muon opt
 
 PROJECT_NAME = 'titans-mac-transformer'
 RUN_NAME = f'mac - {NUM_LONGTERM_MEM} longterm mems, layers {NEURAL_MEM_LAYERS}'
-WANDB_ONLINE = False # turn this on to pipe experiment to cloud
+WANDB_ONLINE = True # turn this on to pipe experiment to cloud
 
 # perf related
 
-USE_ACCELERATED_SCAN = True
-USE_FLEX_ATTN = True
+USE_ACCELERATED_SCAN = torch.cuda.is_available()  # Only works on CUDA
+USE_FLEX_ATTN = torch.cuda.is_available()  # FlexAttention requires CUDA
 USE_FAST_INFERENCE = False
 
 # wandb experiment tracker
@@ -125,7 +137,7 @@ model = MemoryAsContextTransformer(
         per_parameter_lr_modulation = MEMORY_MODEL_PER_LAYER_LEARNED_LR,
         spectral_norm_surprises = NEURAL_MEM_SPEC_NORM_SURPRISES
     )
-).cuda()
+).to(device)
 
 # prepare enwik8 data
 
@@ -135,21 +147,22 @@ with gzip.open('./data/enwik8.gz') as file:
     data_train, data_val = map(torch.from_numpy, (data_train, data_val))
 
 class TextSamplerDataset(Dataset):
-    def __init__(self, data, seq_len):
+    def __init__(self, data, seq_len, device):
         super().__init__()
         self.data = data
         self.seq_len = seq_len
+        self.device = device
 
     def __getitem__(self, index):
         rand_start = torch.randint(0, self.data.size(0) - self.seq_len, (1,))
         full_seq = self.data[rand_start: rand_start + self.seq_len + 1].long()
-        return full_seq.cuda()
+        return full_seq.to(self.device)
 
     def __len__(self):
         return self.data.size(0) // self.seq_len
 
-train_dataset = TextSamplerDataset(data_train, SEQ_LEN)
-val_dataset   = TextSamplerDataset(data_val, SEQ_LEN)
+train_dataset = TextSamplerDataset(data_train, SEQ_LEN, device)
+val_dataset   = TextSamplerDataset(data_val, SEQ_LEN, device)
 train_loader  = cycle(DataLoader(train_dataset, batch_size = BATCH_SIZE))
 val_loader    = cycle(DataLoader(val_dataset, batch_size = BATCH_SIZE))
 
@@ -178,7 +191,7 @@ for i in tqdm.tqdm(range(NUM_BATCHES), mininterval = 10., desc = 'training'):
             loss = model(next(val_loader), return_loss = True)
             print(f'validation loss: {loss.item()}')
 
-    if SHOULD_GENERATE and i % GENERATE_EVERY == 0:
+    if SHOULD_GENERATE and (i % GENERATE_EVERY == 0 or i == NUM_BATCHES - 1):
         model.eval()
         inp = random.choice(val_dataset)[:PRIME_LENGTH]
         prime = decode_tokens(inp)
@@ -187,3 +200,15 @@ for i in tqdm.tqdm(range(NUM_BATCHES), mininterval = 10., desc = 'training'):
         sample = model.sample(inp[None, ...], GENERATE_LENGTH, use_cache = USE_FAST_INFERENCE)
         output_str = decode_tokens(sample[0])
         print(output_str)
+
+        # Save checkpoint after generation
+        checkpoint_path = f'checkpoints/titans_mac_step_{i}.pt'
+        import os
+        os.makedirs('checkpoints', exist_ok=True)
+        torch.save({
+            'step': i,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optim.state_dict(),
+            'loss': loss.item(),
+        }, checkpoint_path)
+        print(f'\nCheckpoint saved to {checkpoint_path}')
