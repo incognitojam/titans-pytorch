@@ -78,9 +78,7 @@ USE_FAST_INFERENCE = False
 # wandb experiment tracker
 
 import wandb
-wandb.init(project = PROJECT_NAME, mode = 'disabled' if not WANDB_ONLINE else 'online')
-wandb.run.name = RUN_NAME
-wandb.run.save()
+wandb.init(project = PROJECT_NAME, name = RUN_NAME, mode = 'disabled' if not WANDB_ONLINE else 'online')
 
 # helpers
 
