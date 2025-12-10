@@ -79,6 +79,9 @@ USE_FAST_INFERENCE = False
 
 import wandb
 wandb.init(project = PROJECT_NAME, name = RUN_NAME, mode = 'disabled' if not WANDB_ONLINE else 'online')
+CHECKPOINTS_PATH = f'checkpoints-{wandb.run.id}'
+import os
+os.makedirs(CHECKPOINTS_PATH)
 
 # helpers
 
@@ -200,9 +203,7 @@ for i in tqdm.tqdm(range(NUM_BATCHES), mininterval = 10., desc = 'training'):
         print(output_str)
 
         # Save checkpoint after generation
-        checkpoint_path = f'checkpoints/titans_mac_step_{i}.pt'
-        import os
-        os.makedirs('checkpoints', exist_ok=True)
+        checkpoint_path = f'{CHECKPOINTS_PATH}/titans_mac_step_{i}.pt'
         torch.save({
             'step': i,
             'model_state_dict': model.state_dict(),
