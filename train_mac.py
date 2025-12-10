@@ -31,21 +31,21 @@ else:
 # constants
 
 NUM_BATCHES = 10000
-BATCH_SIZE = 4
-GRADIENT_ACCUMULATE_EVERY = 4
+BATCH_SIZE = 8
+GRADIENT_ACCUMULATE_EVERY = 2
 LEARNING_RATE = 2e-4
 VALIDATE_EVERY  = 100
 GENERATE_EVERY  = 500
 PRIME_LENGTH = 100
 GENERATE_LENGTH = 512
 SHOULD_GENERATE = True
-SEQ_LEN = 512
+SEQ_LEN = 256
 
 # neural memory related
 
 NEURAL_MEMORY_DEPTH = 2
 NUM_PERSIST_MEM = 4
-NUM_LONGTERM_MEM = 4
+NUM_LONGTERM_MEM = 8
 NEURAL_MEM_LAYERS = (2, 4, 6)                   # layers 2, 4, 6 have neural memory, can add more
 NEURAL_MEM_GATE_ATTN_OUTPUT = False
 NEURAL_MEM_MOMENTUM = True
@@ -66,7 +66,7 @@ NEURAL_MEM_SPEC_NORM_SURPRISES = True           # applying lessons from Muon opt
 # experiment related
 
 PROJECT_NAME = 'titans-mac-transformer'
-RUN_NAME = f'mac - {NUM_LONGTERM_MEM} longterm mems, layers {NEURAL_MEM_LAYERS}'
+RUN_NAME = f'mac - {NUM_LONGTERM_MEM} longterm mems, layers {NEURAL_MEM_LAYERS}, batch {BATCH_SIZE}, seq len {SEQ_LEN}, grad_acc {GRADIENT_ACCUMULATE_EVERY}'
 WANDB_ONLINE = True # turn this on to pipe experiment to cloud
 
 # perf related
