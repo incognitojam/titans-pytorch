@@ -30,23 +30,23 @@ else:
 
 # constants
 
-NUM_BATCHES = 2500
-BATCH_SIZE = 2
+NUM_BATCHES = 10000
+BATCH_SIZE = 4
 GRADIENT_ACCUMULATE_EVERY = 4
 LEARNING_RATE = 2e-4
 VALIDATE_EVERY  = 100
-GENERATE_EVERY  = 250
+GENERATE_EVERY  = 500
 PRIME_LENGTH = 100
 GENERATE_LENGTH = 512
 SHOULD_GENERATE = True
-SEQ_LEN = 256
+SEQ_LEN = 512
 
 # neural memory related
 
 NEURAL_MEMORY_DEPTH = 2
 NUM_PERSIST_MEM = 4
 NUM_LONGTERM_MEM = 4
-NEURAL_MEM_LAYERS = (2, 4)                   # layers 2, 4, 6 have neural memory, can add more
+NEURAL_MEM_LAYERS = (2, 4, 6)                   # layers 2, 4, 6 have neural memory, can add more
 NEURAL_MEM_GATE_ATTN_OUTPUT = False
 NEURAL_MEM_MOMENTUM = True
 NEURAL_MEM_MOMENTUM_ORDER = 1
