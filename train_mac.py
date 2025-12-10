@@ -203,6 +203,8 @@ for i in tqdm.tqdm(range(NUM_BATCHES), mininterval = 10., desc = 'training'):
         print(output_str)
 
         # Save checkpoint after generation
+        if i == 0: continue
+
         checkpoint_path = f'{CHECKPOINTS_PATH}/titans_mac_step_{i}.pt'
         torch.save({
             'step': i,
