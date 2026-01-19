@@ -6,6 +6,10 @@
 
 Unofficial implementation of [Titans](https://arxiv.org/abs/2501.00663) in Pytorch. Will also contain some explorations into architectures beyond their simple 1-4 layer MLP for the neural memory module, if it works well to any degree.
 
+[Paper review by Yannic](https://www.youtube.com/watch?v=v67plFw1nMw)
+
+[Quick Colab Run](https://colab.research.google.com/drive/11cGgSABykte3qbK-hjzPgLif3-9UUejm?usp=sharing)
+
 ## Appreciation
 
 - [Eryk](https://github.com/sentialx) for sharing his early experimental results with me, positive for 2 layer MLP
@@ -61,13 +65,13 @@ sampled = transformer.sample(token_ids[:, :4], 512)
 ## Experiments
 
 ```bash
-$ pip install .[examples]
+$ pip install uv
 ```
 
 Then modify `train_mac.py` and run it to query nature
 
 ```bash
-$ python train_mac.py
+$ uv run train_mac.py
 ```
 
 ## Citations
