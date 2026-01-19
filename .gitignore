@@ -1,6 +1,11 @@
 train_local.py
 .DS_Store
 
+# Training artifacts
+checkpoints*/
+wandb/
+*.pt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
